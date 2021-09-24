@@ -28,8 +28,8 @@ save-image:
 	docker save --output redis-dump-go-image.tar redis-dump-go:${RELEASE_VERSION}
 
 push-image:
-	docker tag redis-dump-go:latest ghcr.io/yannh/redis-dump-go:${RELEASE_VERSION}
-	docker push ghcr.io/yannh/redis-dump-go:${RELEASE_VERSION}
+	docker tag redis-dump-go:latest ghcr.io/kubedb/redis-dump-go:${RELEASE_VERSION}
+	docker push ghcr.io/kubedb/redis-dump-go:${RELEASE_VERSION}
 
 docker-test:
 	docker run -t -v $$PWD:/go/src/github.com/yannh/redis-dump-go -w /go/src/github.com/yannh/redis-dump-go golang:1.16 make test

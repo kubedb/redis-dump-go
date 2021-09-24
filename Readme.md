@@ -24,7 +24,7 @@ Download the appropriate version for your operating system on [ŧhe release page
 or use the [Docker image](https://github.com/users/yannh/packages/container/package/redis-dump-go):
 
 ```bash
-$ docker run ghcr.io/yannh/redis-dump-go:latest -h
+$ docker run ghcr.io/kubedb/redis-dump-go:latest -h
 Usage of /redis-dump-go:
 [...]
 ```
