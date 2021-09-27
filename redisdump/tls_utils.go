@@ -56,7 +56,6 @@ func NewRedisClient(redisURL string, tlsHandler *TlsHandler, redisPassword strin
 	customConnFunc := func(network, addr string) (radix.Conn, error) {
 		dialOpts := []radix.DialOpt{
 			radix.DialTimeout(5 * time.Minute),
-			radix.DialAuthPass(redisPassword),
 		}
 		if redisPassword != "" {
 			dialOpts = append(dialOpts, radix.DialAuthPass(redisPassword))
