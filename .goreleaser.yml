@@ -31,18 +31,18 @@ archives:
 
 dockers:
   - image_templates:
-      - 'ghcr.io/yannh/redis-dump-go:latest'
-      - 'ghcr.io/yannh/redis-dump-go:{{ .Tag }}'
-      - 'ghcr.io/yannh/redis-dump-go:{{ .Tag }}-amd64'
+      - 'ghcr.io/kubedb/redis-dump-go:latest'
+      - 'ghcr.io/kubedb/redis-dump-go:{{ .Tag }}'
+      - 'ghcr.io/kubedb/redis-dump-go:{{ .Tag }}-amd64'
     dockerfile: Dockerfile
     build_flag_templates:
       - "--platform=linux/amd64"
     goos: linux
     goarch: amd64
   - image_templates:
-      - 'ghcr.io/yannh/redis-dump-go:latest-alpine'
-      - 'ghcr.io/yannh/redis-dump-go:{{ .Tag }}-alpine'
-      - 'ghcr.io/yannh/redis-dump-go:{{ .Tag }}-amd64-alpine'
+      - 'ghcr.io/kubedb/redis-dump-go:latest-alpine'
+      - 'ghcr.io/kubedb/redis-dump-go:{{ .Tag }}-alpine'
+      - 'ghcr.io/kubedb/redis-dump-go:{{ .Tag }}-amd64-alpine'
     dockerfile: Dockerfile-alpine
     build_flag_templates:
       - "--platform=linux/amd64"
