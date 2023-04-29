@@ -6,24 +6,27 @@ import (
 	"fmt"
 )
 
+const KeyTotalKeys = "__redisdump_total_keys"
+
 type Config struct {
-	Host      string
-	Port      int
-	Db        int
-	Username  string
-	Filter    string
-	Noscan    bool
-	BatchSize int
-	NWorkers  int
-	WithTTL   bool
-	Output    string
-	Silent    bool
-	Tls       bool
-	Insecure  bool
-	CaCert    string
-	Cert      string
-	Key       string
-	Help      bool
+	Host         string
+	Port         int
+	Db           int
+	Username     string
+	Filter       string
+	Noscan       bool
+	BatchSize    int
+	NWorkers     int
+	WithTTL      bool
+	Output       string
+	Silent       bool
+	Tls          bool
+	Insecure     bool
+	CaCert       string
+	Cert         string
+	Key          string
+	Help         bool
+	SetTotalKeys bool
 }
 
 func isFlagPassed(flags *flag.FlagSet, name string) bool {
@@ -60,6 +63,7 @@ func FromFlags(progName string, args []string) (Config, string, error) {
 	flags.StringVar(&c.Cert, "cert", "", "Private key file to authenticate with")
 	flags.StringVar(&c.Key, "key", "", "SSL private key file path")
 	flags.BoolVar(&c.Help, "h", false, "show help information")
+	flags.BoolVar(&c.SetTotalKeys, "set-total-keys", false, "set total number of keys as "+KeyTotalKeys)
 	flags.Usage = func() {
 		fmt.Fprintf(&outBuf, "Usage: %s [OPTION]...\n", progName)
 		flags.PrintDefaults()

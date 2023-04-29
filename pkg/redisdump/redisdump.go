@@ -18,7 +18,7 @@ func ttlToRedisCmd(k string, val int64) []string {
 	return []string{"EXPIREAT", k, fmt.Sprint(time.Now().Unix() + val)}
 }
 
-func stringToRedisCmd(k, val string) []string {
+func StringToRedisCmd(k, val string) []string {
 	return []string{"SET", k, val}
 }
 
@@ -166,7 +166,7 @@ func dumpKeys(client radix.Client, cmd radixCmder, keys []string, withTTL bool, 
 			if err = client.Do(cmd(&val, "GET", key)); err != nil {
 				return err
 			}
-			redisCmds = [][]string{stringToRedisCmd(key, val)}
+			redisCmds = [][]string{StringToRedisCmd(key, val)}
 
 		case "list":
 			var val []string
@@ -394,10 +394,7 @@ type Host struct {
 	TlsHandler *TlsHandler
 }
 
-// DumpServer dumps all Keys from the redis server given by redisURL,
-// to the Logger logger. Progress notification informations
-// are regularly sent to the channel progressNotifications
-func DumpServer(s Host, db *uint8, filter string, nWorkers int, withTTL bool, batchSize int, noscan bool, logger *log.Logger, serializer func([]string) string, progress chan<- ProgressNotification) error {
+func NewClient(s Host, db *uint8, nWorkers int) (*radix.Pool, error) {
 	redisURL := RedisURL(s.Host, fmt.Sprint(s.Port))
 	getConnFunc := func(db *uint8) func(network, addr string) (radix.Conn, error) {
 		return func(network, addr string) (radix.Conn, error) {
@@ -409,34 +406,51 @@ func DumpServer(s Host, db *uint8, filter string, nWorkers int, withTTL bool, ba
 			return radix.Dial(network, addr, dialOpts...)
 		}
 	}
+	return radix.NewPool("tcp", redisURL, nWorkers, radix.PoolConnFunc(getConnFunc(db)))
+}
 
+// DumpServer dumps all Keys from the redis server given by redisURL,
+// to the Logger logger. Progress notification informations
+// are regularly sent to the channel progressNotifications
+func DumpServer(s Host, db *uint8, filter string, nWorkers int, withTTL bool, batchSize int, noscan bool, logger *log.Logger, serializer func([]string) string, progress chan<- ProgressNotification) (int, error) {
 	dbs := []uint8{}
 	if db != AllDBs {
 		dbs = []uint8{*db}
 	} else {
-		client, err := radix.NewPool("tcp", redisURL, nWorkers, radix.PoolConnFunc(getConnFunc(nil)))
+		client, err := NewClient(s, nil, nWorkers)
 		if err != nil {
-			return err
+			return -1, err
 		}
 
 		dbs, err = getDBIndexes(client)
 		if err != nil {
-			return err
+			return -1, err
 		}
 		client.Close()
 	}
 
+	totalSize := 0
 	for _, db := range dbs {
-		client, err := radix.NewPool("tcp", redisURL, nWorkers, radix.PoolConnFunc(getConnFunc(&db)))
+		client, err := NewClient(s, &db, nWorkers)
 		if err != nil {
-			return err
+			return -1, err
 		}
 		defer client.Close()
 
 		if err = dumpDB(client, &db, filter, nWorkers, withTTL, batchSize, noscan, logger, serializer, progress); err != nil {
-			return err
+			return -1, err
+		}
+
+		var dbSize string
+		if err = client.Do(radix.Cmd(&dbSize, "dbsize")); err != nil {
+			return -1, err
+		}
+		if size, err := strconv.Atoi(dbSize); err != nil {
+			return -1, err
+		} else {
+			totalSize += size
 		}
 	}
 
-	return nil
+	return totalSize, nil
 }

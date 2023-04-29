@@ -117,9 +117,22 @@ func realMain() int {
 		TlsHandler: tlshandler,
 	}
 
-	if err = redisdump.DumpServer(s, db, c.Filter, c.NWorkers, c.WithTTL, c.BatchSize, c.Noscan, logger, serializer, progressNotifs); err != nil {
+	if hosts, err := redisdump.GetHosts(s, c.NWorkers); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
 		return 1
+	} else {
+		totalSize := 0
+		for _, host := range hosts {
+			if size, err := redisdump.DumpServer(host, db, c.Filter, c.NWorkers, c.WithTTL, c.BatchSize, c.Noscan, logger, serializer, progressNotifs); err != nil {
+				fmt.Fprintf(os.Stderr, "%s", err)
+				return 1
+			} else {
+				totalSize += size
+			}
+		}
+		if c.SetTotalKeys {
+			logger.Print(serializer(redisdump.StringToRedisCmd(config.KeyTotalKeys, fmt.Sprint(totalSize+1))))
+		}
 	}
 
 	return 0
