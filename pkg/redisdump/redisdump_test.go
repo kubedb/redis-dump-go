@@ -66,7 +66,7 @@ func TestStringToRedisCmd(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		res := stringToRedisCmd(test.key, test.value)
+		res := StringToRedisCmd(test.key, test.value)
 		if !testEqString(res, test.expected) {
 			t.Errorf("Failed generating redis command from string for: %s %s", test.key, test.value)
 		}

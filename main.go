@@ -122,12 +122,16 @@ func realMain() int {
 		fmt.Fprintf(os.Stderr, "%s", err)
 		return 1
 	} else {
+		totalSize := 0
 		for _, host := range hosts {
-			if err = redisdump.DumpServer(host, db, c.Filter, c.NWorkers, c.WithTTL, c.BatchSize, c.Noscan, logger, serializer, progressNotifs); err != nil {
+			if size, err := redisdump.DumpServer(host, db, c.Filter, c.NWorkers, c.WithTTL, c.BatchSize, c.Noscan, logger, serializer, progressNotifs); err != nil {
 				fmt.Fprintf(os.Stderr, "%s", err)
 				return 1
+			} else {
+				totalSize += size
 			}
 		}
+		logger.Print(serializer(redisdump.StringToRedisCmd("__stash_total_keys", fmt.Sprint(totalSize))))
 	}
 
 	return 0
