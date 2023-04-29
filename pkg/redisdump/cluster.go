@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mediocregopher/radix/v3"
 	"github.com/pkg/errors"
 )
 
@@ -75,4 +76,42 @@ func GetMasterNodeAddresses(s string) ([]Node, error) {
 		}
 	}
 	return masters, nil
+}
+
+func GetHosts(s Host, nWorkers int) ([]Host, error) {
+	client, err := NewClient(s, nil, nWorkers)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	var val string
+	err = client.Do(radix.Cmd(&val, "INFO"))
+	if err != nil {
+		return nil, err
+	}
+	info, err := ParseRedisInfo(val)
+	if err != nil {
+		return nil, err
+	}
+	if info["cluster_enabled"] == "0" {
+		return []Host{s}, nil
+	}
+
+	err = client.Do(radix.Cmd(&val, "CLUSTER", "nodes"))
+	if err != nil {
+		return nil, err
+	}
+	masters, err := GetMasterNodeAddresses(val)
+	if err != nil {
+		panic(err)
+	}
+	hosts := make([]Host, 0, len(masters))
+	for _, m := range masters {
+		scopy := s
+		scopy.Host = m.Host
+		scopy.Port = m.Port
+		hosts = append(hosts, scopy)
+	}
+	return hosts, nil
 }
