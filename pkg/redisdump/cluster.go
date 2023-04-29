@@ -1,6 +1,7 @@
 package redisdump
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -114,4 +115,22 @@ func GetHosts(s Host, nWorkers int) ([]Host, error) {
 		hosts = append(hosts, scopy)
 	}
 	return hosts, nil
+}
+
+func NewCluster(hosts []Host) (*radix.Cluster, error) {
+	addrs := make([]string, 0, len(hosts))
+	for _, host := range hosts {
+		addrs = append(addrs, fmt.Sprintf("%s:%d", host.Host, host.Port))
+	}
+	getConnFunc := func(db *uint8) func(network, addr string) (radix.Client, error) {
+		return func(network, addr string) (radix.Client, error) {
+			dialOpts, err := redisDialOpts(hosts[0].Username, hosts[0].Password, hosts[0].TlsHandler, db)
+			if err != nil {
+				return nil, err
+			}
+
+			return radix.Dial(network, addr, dialOpts...)
+		}
+	}
+	return radix.NewCluster(addrs, radix.ClusterPoolFunc(getConnFunc(nil)))
 }
