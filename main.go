@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/mediocregopher/radix/v3"
 	"io"
 	"log"
 	"os"
@@ -117,12 +118,57 @@ func realMain() int {
 		TlsHandler: tlshandler,
 	}
 
-	if err = redisdump.DumpServer(s, db, c.Filter, c.NWorkers, c.WithTTL, c.BatchSize, c.Noscan, logger, serializer, progressNotifs); err != nil {
+	if hosts, err := GetHosts(s, c.NWorkers); err != nil {
 		fmt.Fprintf(os.Stderr, "%s", err)
 		return 1
+	} else {
+		for _, host := range hosts {
+			if err = redisdump.DumpServer(host, db, c.Filter, c.NWorkers, c.WithTTL, c.BatchSize, c.Noscan, logger, serializer, progressNotifs); err != nil {
+				fmt.Fprintf(os.Stderr, "%s", err)
+				return 1
+			}
+		}
 	}
 
 	return 0
+}
+
+func GetHosts(s redisdump.Host, nWorkers int) ([]redisdump.Host, error) {
+	client, err := redisdump.NewClient(s, nil, nWorkers)
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	var val string
+	err = client.Do(radix.Cmd(&val, "INFO"))
+	if err != nil {
+		return nil, err
+	}
+	info, err := redisdump.ParseRedisInfo(val)
+	if err != nil {
+		return nil, err
+	}
+	if info["cluster_enabled"] == "0" {
+		return []redisdump.Host{s}, nil
+	}
+
+	err = client.Do(radix.Cmd(&val, "CLUSTER", "nodes"))
+	if err != nil {
+		return nil, err
+	}
+	masters, err := redisdump.GetMasterNodeAddresses(val)
+	if err != nil {
+		panic(err)
+	}
+	hosts := make([]redisdump.Host, 0, len(masters))
+	for _, m := range masters {
+		scopy := s
+		scopy.Host = m.Host
+		scopy.Port = m.Port
+		hosts = append(hosts, scopy)
+	}
+	return hosts, nil
 }
 
 func main() {
