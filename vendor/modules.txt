@@ -1,4 +1,4 @@
-# github.com/mediocregopher/radix/v3 v3.8.0
+# github.com/mediocregopher/radix/v3 v3.8.1
 ## explicit; go 1.13
 github.com/mediocregopher/radix/v3
 github.com/mediocregopher/radix/v3/internal/bytesutil

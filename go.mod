@@ -3,7 +3,7 @@ module github.com/yannh/redis-dump-go
 go 1.18
 
 require (
-	github.com/mediocregopher/radix/v3 v3.8.0
+	github.com/mediocregopher/radix/v3 v3.8.1
 	github.com/pkg/errors v0.9.1
 )
 
